@@ -1,0 +1,189 @@
+.calculator-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  background-color: #f5f5f5;
+}
+
+.calculator-card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 800px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 2.5rem;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.semester-container {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #eaeaea;
+}
+
+.semester-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.semester-header h2 {
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.subject-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 40px;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.subject-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 40px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.subject-row input {
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.subject-row input:focus {
+  border-color: #2196f3;
+  outline: none;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.add-btn {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.add-btn:hover {
+  background-color: #c8e6c9;
+}
+
+.calculate-btn {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.calculate-btn:hover {
+  background-color: #bbdefb;
+}
+
+.reset-btn {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.reset-btn:hover {
+  background-color: #ffcdd2;
+}
+
+.remove-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.remove-btn:hover:not(:disabled) {
+  background-color: #ffebee;
+  color: #d32f2f;
+  border-color: #ffcdd2;
+}
+
+.remove-btn:disabled {
+  background-color: #f5f5f5;
+  color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.semester-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  color: #333;
+}
+
+.overall-result {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.overall-result h2 {
+  color: #2e7d32;
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 600px) {
+  .calculator-container {
+    padding: 1rem;
+  }
+  
+  .calculator-card {
+    padding: 1.5rem;
+  }
+  
+  .subject-row {
+    grid-template-columns: 2fr 1fr 1fr 32px;
+    gap: 8px;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+  }
+}
