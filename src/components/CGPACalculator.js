@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { auth, db } from '../firebase/config';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { calculateCGPA } from '../utils/gradeUtils';
 import './CGPACalculator.css';
 
@@ -42,7 +44,6 @@ const Semester = ({ semester, onUpdate, onRemove }) => {
           <span>Subject Name</span>
           <span>Marks</span>
           <span>Credits</span>
-          <span>Action</span>
         </div>
         {semester.subjects.map(subject => (
           <div key={subject.id} className="subject-row">
@@ -98,6 +99,56 @@ const CGPACalculator = () => {
     cgpa: null
   }]);
   const [overallCGPA, setOverallCGPA] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Optimized useEffect hook
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!auth.currentUser) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const docRef = doc(db, 'cgpa', auth.currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.semesters && data.semesters.length > 0) {
+            setSemesters(data.semesters);
+            setOverallCGPA(data.overallCGPA);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+
+    // Add auth state listener
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadUserData();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []); // Remove auth.currentUser dependency
+
+  // Add loading indicator in the return statement
+  if (isLoading) {
+    return (
+      <div className="calculator-container">
+        <div className="calculator-card">
+          <h1>Loading...</h1>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddSemester = () => {
     setSemesters([
@@ -121,7 +172,7 @@ const CGPACalculator = () => {
     ));
   };
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     const updatedSemesters = semesters.map(semester => {
       const validSubjects = semester.subjects.filter(
         subject => subject.name && 
@@ -143,6 +194,19 @@ const CGPACalculator = () => {
 
     setSemesters(updatedSemesters);
     setOverallCGPA(overallResult);
+
+    // Save to Firebase
+    if (auth.currentUser) {
+      try {
+        await setDoc(doc(db, 'cgpa', auth.currentUser.uid), {
+          semesters: updatedSemesters,
+          overallCGPA: overallResult,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error saving data:', error);
+      }
+    }
   };
 
   const handleReset = () => {
@@ -158,7 +222,7 @@ const CGPACalculator = () => {
   return (
     <div className="calculator-container">
       <div className="calculator-card">
-        <h1>RAM'S CGPA CALCULATOR</h1>
+        <h1>RAMSIDDESH CGPA CALCULATOR</h1>
         
         {semesters.map(semester => (
           <Semester
