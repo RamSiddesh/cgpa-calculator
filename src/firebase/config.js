@@ -3,13 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  // Copy and paste your config from Firebase Console here
-  apiKey: "AIzaSyAw7bBPJP1x3DGVPW7q_LzHn8A5hTRWIrM",
-  authDomain: "cgpa-calculator-381d2.firebaseapp.com",
-  projectId: "cgpa-calculator-381d2",
-  storageBucket: "cgpa-calculator-381d2.firebasestorage.app",
-  messagingSenderId: "526949063848",
-  appId: "1:526949063848:web:8cdb889676b4f99139769d"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: "cgpa-calculator-new-ce209.firebaseapp.com",
+  projectId: "cgpa-calculator-new-ce209",
+  storageBucket: "cgpa-calculator-new-ce209.firebasestorage.app",
+  messagingSenderId: "935877576411",
+  appId: "1:935877576411:web:0199bb8c2e723074606efe"
 };
 
 const app = initializeApp(firebaseConfig);
