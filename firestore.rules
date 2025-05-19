@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update, delete: if isOwner(userId);
+    }
+    
+    match /cgpa/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        request.resource.data.semesters is list;
+      allow update: if isOwner(userId) &&
+        request.resource.data.semesters is list &&
+        request.resource.data.updatedAt is string;
+      allow delete: if isOwner(userId);
+    }
+  }
+}
