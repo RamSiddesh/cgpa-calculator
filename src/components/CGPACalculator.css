@@ -92,7 +92,7 @@ h1 {
   cursor: pointer;
 }
 
-.subject-select {
+.subject-row select {
   background-color: #2a2a2a;
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -101,6 +101,23 @@ h1 {
   font-size: 0.9rem;
   width: 100%;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
+.subject-row select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.subject-row select option {
+  background-color: #2a2a2a;
+  color: #ffffff;
 }
 
 .subject-select:focus {
@@ -199,25 +216,76 @@ h1 {
   }
 }
 
+/* Header container layout */
 .header-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Controls space distribution */
   align-items: center;
-  padding: 1rem;
+  padding: 1rem; /* Adjust padding around header */
   margin-bottom: 2rem;
 }
 
+/* Button container styling */
+.header-buttons {
+  display: flex;
+  gap: 10px; /* Space between buttons */
+}
+
+/* SRM button specific styling */
+.srm-btn {
+  background-color: #333333;
+  /* Add positioning properties if needed */
+  margin-left: 20px; /* Example adjustment */
+  order: 2; /* Change display order */
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.srm-btn {
+  background-color: #4b4f52;
+  border: 1px solid #100101;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
 .logout-btn {
-  background: transparent;
+  background-color: transparent;
   border: 1px solid #fff;
   color: #fff;
-  padding: 0.5rem 1rem;
+  padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.srm-btn:hover {
+  background-color: #606366;
 }
 
 .logout-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn:hover {
+  background-color: #333333;
+}
+
+.srm-btn:hover {
+  background-color: #333333;
+}
+
+.srm-btn:hover {
+  background-color: #333333;
+}
+
+.logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .footer {
@@ -226,4 +294,70 @@ h1 {
   padding: 1rem;
   color: #888;
   font-size: 0.8rem;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.srm-btn {
+  background-color: #333333;
+  position: relative;
+  top: 15px; /* Adjust this value to move up/down */
+}
+
+.back-btn {
+  padding: 8px 16px;
+  background-color: #333333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto; /* Maintain right alignment */
+  margin-right: -23px; /* Add right margin */
+}
+
+.summary-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.summary-table th {
+  background-color: #f5f5f5;
+}
+
+.result-container {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.subject-header {
+  grid-template-columns: 2fr 1fr 1fr; /* Removed action column */
+  text-align: center;
+}
+
+.subject-row {
+  grid-template-columns: 2fr 1fr 1fr; /* Removed action column */
+  gap: 8px;
+  position: relative;
+}
+
+.subject-row .remove-btn {
+  position: absolute;
+  right: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
 }

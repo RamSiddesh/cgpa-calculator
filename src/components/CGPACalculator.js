@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { calculateCGPA } from '../utils/gradeUtils';
 import './CGPACalculator.css';
+import SRMCalculator from './SRMCalculator';
 
 // Add subject options array
 const subjectOptions = [
@@ -138,46 +140,78 @@ const CGPACalculator = () => {
   }]);
   const [overallCGPA, setOverallCGPA] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [calculatorType, setCalculatorType] = useState('marks'); // Add this line
 
-  // Optimized useEffect hook
   useEffect(() => {
-    const loadUserData = async () => {
-      if (!auth.currentUser) {
-        setIsLoading(false);
-        return;
-      }
-
+    const loadUserData = (user) => {
+      setIsLoading(true);
       try {
-        const docRef = doc(db, 'cgpa', auth.currentUser.uid);
-        const docSnap = await getDoc(docRef);
+        const docRef = doc(db, 'users', user.uid);
         
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.semesters && data.semesters.length > 0) {
-            setSemesters(data.semesters);
-            setOverallCGPA(data.overallCGPA);
+        const unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+          const defaultSemesters = [{ id: 1, number: 1, subjects: [{id: 1, name: '', marks: '', credits: ''}], cgpa: null }];
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            if (userData.marksData) {
+              const loadedSemesters = (userData.marksData.semesters && userData.marksData.semesters.length > 0)
+                ? userData.marksData.semesters.map(semester => ({
+                    ...semester,
+                    subjects: semester.subjects ? semester.subjects.map(subject => ({
+                      ...subject,
+                      marks: subject.marks || '',
+                      credits: subject.credits || ''
+                    })) : [{id: 1, name: '', marks: '', credits: ''}]
+                  }))
+                : defaultSemesters;
+              setSemesters(loadedSemesters);
+              setOverallCGPA(userData.marksData.overallCGPA || null);
+            } else {
+              setSemesters(defaultSemesters);
+              setOverallCGPA(null);
+            }
+          } else {
+            setSemesters(defaultSemesters);
+            setOverallCGPA(null);
           }
-        }
+          setIsLoading(false);
+        }, (error) => {
+          console.error('Error loading marks data:', error);
+          const defaultSemestersOnError = [{ id: 1, number: 1, subjects: [{id: 1, name: '', marks: '', credits: ''}], cgpa: null }];
+          setSemesters(defaultSemestersOnError);
+          setOverallCGPA(null);
+          setIsLoading(false);
+        });
+        
+        return unsubscribeSnapshot;
       } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
+        console.error('Error setting up data listener:', error);
         setIsLoading(false);
+        return () => {};
       }
     };
-
-    loadUserData();
-
-    // Add auth state listener
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    
+    let unsubscribeAuth = null;
+    let unsubscribeSnapshot = null;
+    
+    unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
-        loadUserData();
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        unsubscribeSnapshot = loadUserData(user);
+      } else {
+        const defaultSemestersOnLogout = [{ id: 1, number: 1, subjects: [{id: 1, name: '', marks: '', credits: ''}], cgpa: null }];
+        setSemesters(defaultSemestersOnLogout);
+        setOverallCGPA(null);
+        setIsLoading(false);
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
     });
+    
+    return () => {
+      if (unsubscribeAuth) unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
+  }, []);
 
-    return () => unsubscribe();
-  }, []); // Remove auth.currentUser dependency
-
-  // Add loading indicator in the return statement
   if (isLoading) {
     return (
       <div className="calculator-container">
@@ -226,28 +260,39 @@ const CGPACalculator = () => {
         cgpa: calculateCGPA(validSubjects)
       };
     });
-
+  
     const allSubjects = updatedSemesters.flatMap(sem => sem.subjects);
     const overallResult = calculateCGPA(allSubjects);
-
+  
     setSemesters(updatedSemesters);
     setOverallCGPA(overallResult);
-
-    // Save to Firebase
+  
+    // Save to Firebase with proper data structure
     if (auth.currentUser) {
       try {
-        await setDoc(doc(db, 'cgpa', auth.currentUser.uid), {
-          semesters: updatedSemesters,
+        const marksData = { // Changed variable name and structure
+          semesters: updatedSemesters.map(sem => ({
+            ...sem,
+            subjects: sem.subjects.map(sub => ({
+              id: sub.id,
+              name: sub.name,
+              marks: sub.marks,
+              credits: sub.credits
+            }))
+          })),
           overallCGPA: overallResult,
           updatedAt: new Date().toISOString()
-        });
+        };
+  
+        await setDoc(doc(db, 'users', auth.currentUser.uid), { marksData }, { merge: true }); // Save under marksData and use merge:true
+        console.log('Marks data saved successfully');
       } catch (error) {
-        console.error('Error saving data:', error);
+        console.error('Error saving marks data:', error);
       }
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     setSemesters([{
       id: 1,
       number: 1,
@@ -255,46 +300,73 @@ const CGPACalculator = () => {
       cgpa: null
     }]);
     setOverallCGPA(null);
+  
+    // Clear data from Firebase
+    if (auth.currentUser) {
+      try {
+        await setDoc(doc(db, 'users', auth.currentUser.uid), {
+          marksData: { // Clear under marksData
+            semesters: [],
+            overallCGPA: null,
+            updatedAt: new Date().toISOString()
+          }
+        }, { merge: true }); // Use merge:true
+        console.log('Marks data cleared successfully');
+      } catch (error) {
+        console.error('Error clearing marks data:', error);
+      }
+    }
   };
 
   return (
     <div className="calculator-container">
       <div className="calculator-card">
-        <div className="header-container">
-          <h1>CGPA Calculator</h1>
-          <button className="logout-btn" onClick={() => auth.signOut()}>Logout</button>
-        </div>
-        
-        {semesters.map(semester => (
-          <Semester
-            key={semester.id}
-            semester={semester}
-            onUpdate={handleUpdateSemester}
-            onRemove={handleRemoveSemester}
-          />
-        ))}
+        {calculatorType === 'marks' ? (
+          <>
+            <div className="header-container">
+              <h1>CGPA Calculator</h1>
+              <div className="header-buttons">
+                <button className="srm-btn" onClick={() => setCalculatorType('srm')}>
+                  SRM
+                </button>
+                <button className="logout-btn" onClick={() => auth.signOut()}>Logout</button>
+              </div>
+            </div>
+            
+            {semesters.map(semester => (
+              <Semester
+                key={semester.id}
+                semester={semester}
+                onUpdate={handleUpdateSemester}
+                onRemove={handleRemoveSemester}
+              />
+            ))}
 
-        <div className="button-group">
-          <button className="action-btn add-btn" onClick={handleAddSemester}>
-            Add Semester
-          </button>
-          <button className="action-btn calculate-btn" onClick={handleCalculate}>
-            Calculate CGPA
-          </button>
-          <button className="action-btn reset-btn" onClick={handleReset}>
-            Reset
-          </button>
-        </div>
+            <div className="button-group">
+              <button className="action-btn add-btn" onClick={handleAddSemester}>
+                Add Semester
+              </button>
+              <button className="action-btn calculate-btn" onClick={handleCalculate}>
+                Calculate CGPA
+              </button>
+              <button className="action-btn reset-btn" onClick={handleReset}>
+                Reset
+              </button>
+            </div>
 
-        {overallCGPA !== null && (
-          <div className="overall-result">
-            <h2>Overall CGPA: {overallCGPA}</h2>
-          </div>
+            {overallCGPA !== null && (
+              <div className="overall-result">
+                <h2>Overall CGPA: {overallCGPA}</h2>
+              </div>
+            )}
+
+            <div className="footer">
+              <p>by ramsid :)</p>
+            </div>
+          </>
+        ) : (
+          <SRMCalculator onBack={() => setCalculatorType('marks')} />
         )}
-
-        <div className="footer">
-          <p>by ramsid :)</p>
-        </div>
       </div>
     </div>
   );
