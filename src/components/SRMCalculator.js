@@ -164,6 +164,8 @@ const SRMCalculator = ({ onBack }) => {
   };
 
   const handleInputChange = (semesterId, subjectId, field, value) => {
+  
+    
     setSemesters(semesters.map(semester => {
       if (semester.id === semesterId) {
         return {
@@ -421,7 +423,7 @@ const SRMCalculator = ({ onBack }) => {
         )}
 
         <div className="footer">
-          <p>by ramsid :)</p>
+          <p></p>
         </div>
       </div>
     </div>

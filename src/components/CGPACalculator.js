@@ -47,6 +47,11 @@ const Semester = ({ semester, onUpdate, onRemove }) => {
   };
 
   const handleInputChange = (id, field, value) => {
+    // Show popup for lab subjects that need conversion to 100-point scale
+    if (field === 'name' && (value === 'Physics Lab' || value === 'Chemistry Lab')) {
+      alert('Convert it to 100 and enter the mark');
+    }
+    
     const newSubjects = semester.subjects.map(subject => {
       if (subject.id === id) {
         // If the field is 'name', auto-fill credits
@@ -361,7 +366,7 @@ const CGPACalculator = () => {
             )}
 
             <div className="footer">
-              <p>by ramsid :)</p>
+              <p></p>
             </div>
           </>
         ) : (
