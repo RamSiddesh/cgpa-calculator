@@ -4,7 +4,7 @@ import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
 // Make sure your API key is properly configured 
 const firebaseConfig = { 
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "YOUR_API_KEY_HERE", // Fallback to hardcoded key if env var is missing 
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY, // API key is now sourced only from environment variable
   authDomain: "cgpa-calculator-new-ce209.firebaseapp.com", 
   projectId: "cgpa-calculator-new-ce209", 
   storageBucket: "cgpa-calculator-new-ce209.firebasestorage.app", 
