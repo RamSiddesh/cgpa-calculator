@@ -3,8 +3,16 @@ import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore'; 
 
 // Make sure your API key is properly configured 
+const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+
+if (!apiKey) {
+  console.error("CRITICAL: Firebase API Key is missing. Please ensure REACT_APP_FIREBASE_API_KEY is set in your environment variables.");
+  // Depending on the app's desired behavior, you might want to prevent further Firebase initialization
+  // or throw an error here to stop the app from running in a broken state.
+}
+
 const firebaseConfig = { 
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY, // API key is now sourced only from environment variable
+  apiKey: apiKey, // API key is now sourced only from environment variable
   authDomain: "cgpa-calculator-new-ce209.firebaseapp.com", 
   projectId: "cgpa-calculator-new-ce209", 
   storageBucket: "cgpa-calculator-new-ce209.firebasestorage.app", 

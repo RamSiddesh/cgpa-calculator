@@ -100,18 +100,22 @@ body {
 /* Input Styles */
 .apple-input {
   padding: 0.75rem 1rem;
-  border-radius: var(--border-radius-md);
-  border: 1px solid var(--apple-gray);
-  background-color: var(--apple-white);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--apple-white);
   font-size: var(--font-size-base);
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
   width: 100%;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .apple-input:focus {
   outline: none;
-  border-color: var(--apple-blue);
-  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+  border-color: rgba(0, 122, 255, 0.5);
+  box-shadow: 0 0 20px rgba(0, 122, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Select Styles */
@@ -139,11 +143,19 @@ body {
 
 /* Card Styles */
 .apple-card {
-  background-color: var(--apple-white);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.1); /* Adjusted for more pronounced glassmorphism */
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   padding: var(--spacing-lg);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18); /* Slightly more visible border */
+  backdrop-filter: blur(15px); /* Increased blur */
+  -webkit-backdrop-filter: blur(15px); /* Increased blur */
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 /* Header Styles */
@@ -152,10 +164,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--apple-gray);
+  background-color: rgba(245, 245, 247, 0.7); /* Adjusted for more pronounced glassmorphism using a light gray base */
+  backdrop-filter: blur(15px); /* Increased blur */
+  -webkit-backdrop-filter: blur(15px); /* Increased blur */
+  border-bottom: 1px solid rgba(210, 210, 215, 0.5); /* Softer border color */
   position: sticky;
   top: 0;
   z-index: 100;

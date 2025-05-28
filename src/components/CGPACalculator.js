@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase/config';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { calculateCGPA } from '../utils/gradeUtils';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore'; // Updated: removed getDoc, added onSnapshot
+import { db, auth } from '../firebase/config';
+import { onAuthStateChanged } from 'firebase/auth'; // Added this import
+// SRMCalculator import removed as it will be handled in App.js
+// Removed: import Semester from './Semester'; as it's defined below
 import './CGPACalculator.css';
-import SRMCalculator from './SRMCalculator';
 
-// Add subject options array
-const subjectOptions = [
-  'M1', 'M2', 'English', 'Chemistry', 'Physics', 'EEE', 
-  'C Program', 'Python', 'DS', 'Python Lab', 'DS Lab', 
-  'Physics Lab', 'Chemistry Lab'
-];
+// Removed unused subjectOptions variable
 
 // Replace the subjectOptions array with this subjectCredits object
 const subjectCredits = {
@@ -136,16 +131,13 @@ const Semester = ({ semester, onUpdate, onRemove }) => {
   );
 };
 
-const CGPACalculator = () => {
-  const [semesters, setSemesters] = useState([{
-    id: 1,
-    number: 1,
-    subjects: [{ id: 1, name: '', marks: '', credits: '' }],
-    cgpa: null
-  }]);
+const CGPACalculator = ({ onSave }) => {
+  const [semesters, setSemesters] = useState([
+    { id: 1, number: 1, subjects: [{ id: 1, name: '', marks: '', credits: '' }], cgpa: null }
+  ]);
   const [overallCGPA, setOverallCGPA] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [calculatorType, setCalculatorType] = useState('marks'); // Add this line
+  const [isLoading, setIsLoading] = useState(true); // Added isLoading state
+  // calculatorType state removed as it will be handled in App.js
 
   useEffect(() => {
     const loadUserData = (user) => {
@@ -262,12 +254,23 @@ const CGPACalculator = () => {
       
       return {
         ...semester,
-        cgpa: calculateCGPA(validSubjects)
+        cgpa: calculateGradePointsForMarksBasedCGPA(validSubjects) // Use defined helper function
       };
     });
   
-    const allSubjects = updatedSemesters.flatMap(sem => sem.subjects);
-    const overallResult = calculateCGPA(allSubjects);
+    const allValidSubjectsForOverall = updatedSemesters.reduce((acc, sem) => {
+        const validSubjectsInSem = sem.subjects.filter(
+            subject => subject.name &&
+            !isNaN(subject.marks) &&
+            subject.marks >= 0 &&
+            subject.marks <= 100 &&
+            !isNaN(subject.credits) &&
+            subject.credits > 0
+        );
+        return acc.concat(validSubjectsInSem);
+    }, []);
+
+    const overallResult = calculateGradePointsForMarksBasedCGPA(allValidSubjectsForOverall); // Use defined helper function
   
     setSemesters(updatedSemesters);
     setOverallCGPA(overallResult);
@@ -326,17 +329,8 @@ const CGPACalculator = () => {
   return (
     <div className="calculator-container">
       <div className="calculator-card">
-        {calculatorType === 'marks' ? (
           <>
-            <div className="header-container">
-              <h1>CGPA Calculator</h1>
-              <div className="header-buttons">
-                <button className="srm-btn" onClick={() => setCalculatorType('srm')}>
-                  SRM
-                </button>
-                <button className="logout-btn" onClick={() => auth.signOut()}>Logout</button>
-              </div>
-            </div>
+            {/* Header container with title and buttons removed */}
             
             {semesters.map(semester => (
               <Semester
@@ -369,12 +363,43 @@ const CGPACalculator = () => {
               <p></p>
             </div>
           </>
-        ) : (
-          <SRMCalculator onBack={() => setCalculatorType('marks')} />
-        )}
+        {/* Conditional rendering for SRMCalculator removed */}
       </div>
     </div>
   );
 };
 
 export default CGPACalculator;
+
+// Helper function to calculate CGPA based on marks
+const calculateGradePointsForMarksBasedCGPA = (subjects) => {
+  let totalPoints = 0;
+  let totalCredits = 0;
+
+  subjects.forEach(subject => {
+    // Ensure subject has valid marks and credits before processing
+    if (subject.name && subject.marks && subject.credits) {
+      const marksNum = parseFloat(subject.marks);
+      const creditsNum = parseFloat(subject.credits);
+      let gradePoint = 0;
+
+      // Check if marksNum is a valid number between 0 and 100
+      if (!isNaN(marksNum) && marksNum >= 0 && marksNum <= 100) {
+        if (marksNum >= 90) gradePoint = 10;
+        else if (marksNum >= 80) gradePoint = 9;
+        else if (marksNum >= 70) gradePoint = 8;
+        else if (marksNum >= 60) gradePoint = 7;
+        else if (marksNum >= 50) gradePoint = 6;
+        else gradePoint = 0; // Marks below 50 get 0 grade points
+      }
+
+      // Check if creditsNum is a valid positive number and gradePoint is determined
+      if (!isNaN(creditsNum) && creditsNum > 0) {
+        totalCredits += creditsNum;
+        totalPoints += (gradePoint * creditsNum);
+      }
+    }
+  });
+
+  return totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : null;
+};

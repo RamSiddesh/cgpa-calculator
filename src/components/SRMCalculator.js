@@ -31,10 +31,11 @@ const subjectCredits = {
 };
 
 const SRMCalculator = ({ onBack }) => {
+  const initialSemesterId = Date.now();
   const [semesters, setSemesters] = useState([{
-    id: 1,
+    id: initialSemesterId,
     number: 1,
-    subjects: [{ id: 1, name: '', grade: '', credits: '' }],
+    subjects: [{ id: Date.now() + 1, name: '', grade: '', credits: '' }],
     cgpa: null
   }]);
   const [overallCGPA, setOverallCGPA] = useState(null);
@@ -48,24 +49,40 @@ const SRMCalculator = ({ onBack }) => {
         
         const unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
           const defaultSrmState = {
-            semesters: [{ id: 1, number: 1, subjects: [{ id: 1, name: '', grade: '', credits: '' }], cgpa: null }],
+            semesters: [{ id: Date.now(), number: 1, subjects: [{ id: Date.now() + 1, name: '', grade: '', credits: '' }], cgpa: null }],
             overallCGPA: null
           };
           if (docSnap.exists()) {
             const userData = docSnap.data();
-            if (userData.srmData) {
-              const loadedSemesters = (userData.srmData.semesters && userData.srmData.semesters.length > 0)
-                ? userData.srmData.semesters.map(semester => ({
-                    ...semester,
-                    subjects: semester.subjects ? semester.subjects.map(subject => ({
-                      ...subject,
+            if (userData && userData.srmData) {
+              const srmSemesters = userData.srmData.semesters;
+              if (srmSemesters && srmSemesters.length > 0) {
+                const mappedSemesters = srmSemesters.map((semester, semIdx) => {
+                  let subjectsToSet;
+                  if (semester.subjects && semester.subjects.length > 0) {
+                    subjectsToSet = semester.subjects.map((subject, subIdx) => ({
+                      id: subject.id != null ? subject.id : (Date.now() + semIdx * 10000 + subIdx + 1),
+                      name: subject.name || '',
                       grade: subject.grade || '',
                       credits: subject.credits || ''
-                    })) : [{id: 1, name: '', grade: '', credits: ''}]
-                  }))
-                : defaultSrmState.semesters;
-              setSemesters(loadedSemesters);
-              setOverallCGPA(userData.srmData.overallCGPA || null);
+                    }));
+                  } else {
+                    subjectsToSet = [{ id: Date.now() + semIdx * 10000 + 1000, name: '', grade: '', credits: '' }];
+                  }
+                  return {
+                    ...semester,
+                    id: semester.id != null ? semester.id : (Date.now() - semIdx * 100000 - 500000), // Ensure distinct base for semester IDs
+                    number: semester.number != null ? semester.number : semIdx + 1,
+                    subjects: subjectsToSet,
+                    cgpa: semester.cgpa !== undefined ? semester.cgpa : null
+                  };
+                });
+                setSemesters(mappedSemesters);
+                setOverallCGPA(userData.srmData.overallCGPA !== undefined ? userData.srmData.overallCGPA : null);
+              } else {
+                setSemesters(defaultSrmState.semesters);
+                setOverallCGPA(defaultSrmState.overallCGPA);
+              }
             } else {
               setSemesters(defaultSrmState.semesters);
               setOverallCGPA(defaultSrmState.overallCGPA);
@@ -78,7 +95,7 @@ const SRMCalculator = ({ onBack }) => {
         }, (error) => {
           console.error('Error loading SRM data:', error);
           const defaultSrmStateOnError = {
-            semesters: [{ id: 1, number: 1, subjects: [{ id: 1, name: '', grade: '', credits: '' }], cgpa: null }],
+            semesters: [{ id: Date.now(), number: 1, subjects: [{ id: Date.now() + 1, name: '', grade: '', credits: '' }], cgpa: null }],
             overallCGPA: null
           };
           setSemesters(defaultSrmStateOnError.semesters);
@@ -103,7 +120,7 @@ const SRMCalculator = ({ onBack }) => {
         unsubscribeSnapshotListener = loadUserData(user);
       } else {
         const defaultSrmStateOnLogout = {
-          semesters: [{ id: 1, number: 1, subjects: [{ id: 1, name: '', grade: '', credits: '' }], cgpa: null }],
+          semesters: [{ id: Date.now(), number: 1, subjects: [{ id: Date.now() + 1, name: '', grade: '', credits: '' }], cgpa: null }],
           overallCGPA: null
         };
         setSemesters(defaultSrmStateOnLogout.semesters);
@@ -121,19 +138,22 @@ const SRMCalculator = ({ onBack }) => {
 
   // Add these handler functions before handleCalculate
   const handleAddSemester = () => {
+    const newSemesterId = Date.now();
+    const nextSemesterNumber = semesters.length > 0 ? Math.max(...semesters.map(s => s.number)) + 1 : 1;
     setSemesters([
       ...semesters,
       {
-        id: semesters.length + 1,
-        number: semesters.length + 1,
-        subjects: [{ id: 1, name: '', grade: '', credits: '' }],
+        id: newSemesterId,
+        number: nextSemesterNumber,
+        subjects: [{ id: Date.now() + 1, name: '', grade: '', credits: '' }],
         cgpa: null
       }
     ]);
   };
 
   const handleRemoveSemester = (id) => {
-    setSemesters(semesters.filter(sem => sem.id !== id));
+    setSemesters(prevSemesters => prevSemesters.filter(sem => sem.id !== id));
+    setOverallCGPA(null); 
   };
 
   const handleAddSubject = (semesterId) => {
@@ -143,7 +163,7 @@ const SRMCalculator = ({ onBack }) => {
           ...semester,
           subjects: [
             ...semester.subjects,
-            { id: semester.subjects.length + 1, name: '', grade: '', credits: '' }
+            { id: Date.now(), name: '', grade: '', credits: '' }
           ]
         };
       }
@@ -152,37 +172,45 @@ const SRMCalculator = ({ onBack }) => {
   };
 
   const handleRemoveSubject = (semesterId, subjectId) => {
-    setSemesters(semesters.map(semester => {
-      if (semester.id === semesterId && semester.subjects.length > 1) {
-        return {
-          ...semester,
-          subjects: semester.subjects.filter(subject => subject.id !== subjectId)
-        };
-      }
-      return semester;
-    }));
+    setSemesters(prevSemesters =>
+      prevSemesters.map(semester => {
+        if (semester.id === semesterId && semester.subjects.length > 1) {
+          return {
+            ...semester,
+            subjects: semester.subjects.filter(subject => subject.id !== subjectId),
+            cgpa: null // Semester CGPA becomes stale
+          };
+        }
+        return semester;
+      })
+    );
+    setOverallCGPA(null); // Overall CGPA also becomes stale
   };
 
   const handleInputChange = (semesterId, subjectId, field, value) => {
-  
-    
-    setSemesters(semesters.map(semester => {
-      if (semester.id === semesterId) {
-        return {
-          ...semester,
-          subjects: semester.subjects.map(subject => {
-            if (subject.id === subjectId) {
-              if (field === 'name' && subjectCredits[value]) {
-                return { ...subject, [field]: value, credits: subjectCredits[value].toString() };
+    setSemesters(prevSemesters =>
+      prevSemesters.map(semester => {
+        if (semester.id === semesterId) {
+          return {
+            ...semester,
+            subjects: semester.subjects.map(subject => {
+              if (subject.id === subjectId) {
+                if (field === 'name') {
+                  const newCredits = subjectCredits.hasOwnProperty(value) ? subjectCredits[value].toString() : '';
+                  return { ...subject, name: value, credits: newCredits };
+                }
+                // For 'grade' field
+                return { ...subject, [field]: value };
               }
-              return { ...subject, [field]: value };
-            }
-            return subject;
-          })
-        };
-      }
-      return semester;
-    }));
+              return subject;
+            }),
+            cgpa: null // Mark semester CGPA as stale
+          };
+        }
+        return semester;
+      })
+    );
+    setOverallCGPA(null); // Mark overall CGPA as stale
   };
 
   const handleCalculate = async () => {
@@ -191,12 +219,13 @@ const SRMCalculator = ({ onBack }) => {
       let totalCredits = 0;
   
       semester.subjects.forEach(subject => {
-        if (subject.name && subject.grade && subject.credits) {
-          const credits = parseFloat(subject.credits);
+        if (subject.name && subject.grade && subject.credits) { // Ensure basic fields are present
+          const creditsNum = parseFloat(subject.credits);
           const gradePoint = gradePoints[subject.grade];
-          if (gradePoint !== undefined) {
-            totalCredits += credits;
-            totalPoints += (gradePoint * credits);
+          // Ensure credits is a valid positive number and gradePoint is defined
+          if (gradePoint !== undefined && !isNaN(creditsNum) && creditsNum > 0) {
+            totalCredits += creditsNum;
+            totalPoints += (gradePoint * creditsNum);
           }
         }
       });
@@ -211,12 +240,13 @@ const SRMCalculator = ({ onBack }) => {
     let overallCredits = 0;
     updatedSemesters.forEach(semester => {
       semester.subjects.forEach(subject => {
-        if (subject.name && subject.grade && subject.credits) {
-          const credits = parseFloat(subject.credits);
+        if (subject.name && subject.grade && subject.credits) { // Ensure basic fields are present
+          const creditsNum = parseFloat(subject.credits);
           const gradePoint = gradePoints[subject.grade];
-          if (gradePoint !== undefined) {
-            overallCredits += credits;
-            overallPoints += (gradePoint * credits);
+          // Ensure credits is a valid positive number and gradePoint is defined
+          if (gradePoint !== undefined && !isNaN(creditsNum) && creditsNum > 0) {
+            overallCredits += creditsNum;
+            overallPoints += (gradePoint * creditsNum);
           }
         }
       });
@@ -270,9 +300,9 @@ const SRMCalculator = ({ onBack }) => {
   // Modified handleReset
   const handleReset = async () => {
     const resetData = [{
-      id: 1,
+      id: Date.now(),
       number: 1,
-      subjects: [{ id: 1, name: '', grade: '', credits: '' }],
+      subjects: [{ id: Date.now() + 1, name: '', grade: '', credits: '' }],
       cgpa: null
     }];
 
@@ -284,36 +314,13 @@ const SRMCalculator = ({ onBack }) => {
         await setDoc(doc(db, 'users', auth.currentUser.uid), {
           srmData: {
             semesters: resetData,
-            overallCGPA: null
+            overallCGPA: null,
+            updatedAt: new Date().toISOString()
           }
         }, { merge: true });
       }
     } catch (error) {
       console.error('Error resetting SRM data:', error);
-    }
-  };
-
-  const saveUserData = async (dataType, data) => {
-    if (!auth.currentUser) {
-      console.warn('Cannot save: no user logged in');
-      return false;
-    }
-    
-    try {
-      const docRef = doc(db, 'users', auth.currentUser.uid);
-      
-      await setDoc(docRef, {
-        [dataType]: {
-          ...data,
-          updatedAt: new Date().toISOString()
-        }
-      }, { merge: true });
-      
-      console.log(`${dataType} data saved successfully.`);
-      return true;
-    } catch (error) {
-      console.error(`Error saving ${dataType} data:`, error);
-      return false;
     }
   };
 
@@ -326,15 +333,15 @@ const SRMCalculator = ({ onBack }) => {
     <div className="calculator-container">
       <div className="calculator-card">
         <div className="header-container">
-          <h1>SRM-CGPA Calculator</h1>  {/* Changed from "SRM University CGPA Calculator" */}
-          <button className="back-btn" onClick={onBack}>EXIT</button>
+          {/* <h1>SRM-CGPA Calculator</h1> */}
+          {/* <button className="back-btn" onClick={onBack}>EXIT</button> */}
         </div>
 
         {semesters.map(semester => (
           <div key={semester.id} className="semester-container">
             <div className="semester-header">
               <h2>Semester {semester.number}</h2>
-              {semester.number > 1 && (
+              {semesters.length > 1 && (
                 <button className="remove-btn" onClick={() => handleRemoveSemester(semester.id)}>×</button>
               )}
             </div>

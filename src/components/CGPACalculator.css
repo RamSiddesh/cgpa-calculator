@@ -228,41 +228,12 @@ h1 {
 /* Button container styling */
 .header-buttons {
   display: flex;
+  align-items: center; /* Vertically align items */
   gap: 10px; /* Space between buttons */
 }
 
 /* SRM button specific styling */
-.srm-btn {
-  background-color: #333333;
-  /* Add positioning properties if needed */
-  margin-left: 20px; /* Example adjustment */
-  order: 2; /* Change display order */
-}
-
-.header-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.srm-btn {
-  background-color: #4b4f52;
-  border: 1px solid #100101;
-  color: #fff;
-  padding: 8px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.logout-btn {
-  background-color: transparent;
-  border: 1px solid #fff;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
+/* Styles for .srm-btn and .logout-btn removed to avoid conflict with App.css for header buttons */
 
 .srm-btn:hover {
   background-color: #606366;
@@ -272,39 +243,12 @@ h1 {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.logout-btn:hover {
-  background-color: #333333;
-}
-
-.srm-btn:hover {
-  background-color: #333333;
-}
-
-.srm-btn:hover {
-  background-color: #333333;
-}
-
-.logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
 .footer {
   text-align: center;
   margin-top: 2rem;
   padding: 1rem;
   color: #888;
   font-size: 0.8rem;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.srm-btn {
-  background-color: #333333;
-  position: relative;
-  top: 15px; /* Adjust this value to move up/down */
 }
 
 .back-btn {
